@@ -1,0 +1,439 @@
+﻿@model List<OrganogramMasterVm>
+
+@{
+    ViewData["Title"] = "Organogram";
+}
+<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+<style>
+    .card-header {
+        border-left: 5px solid #FBAF41;
+    }
+
+    #orgDiv td.google-visualization-orgchart-node.google-visualization-orgchart-node-medium {
+        background: lightgray;
+        border: 1px solid black;
+        padding: 5px;
+        box-shadow: none;
+    }
+
+        #orgDiv td.google-visualization-orgchart-node.google-visualization-orgchart-node-medium.google-visualization-orgchart-nodesel {
+            background: lightseagreen;
+            border: 1px solid black;
+            padding: 5px;
+            box-shadow: none;
+        }
+
+    #box {
+        min-height: 480px;
+    }
+
+    .childTbl tbody tr td {
+        padding: 0;
+        text-align: left;
+    }
+
+    .childTbl {
+        margin-bottom: 0;
+    }
+
+    .google-visualization-orgchart-node-medium {
+        position: relative;
+        padding: 0 !important;
+    }
+
+    .obox {
+        margin: 0;
+        padding: 0;
+        top: 0;
+        right: 0;
+        left: 0;
+    }
+
+
+    .orghead {
+        background-color: #D6DBE9;
+    }
+
+    .orgname {
+        background-color: wheat;
+    }
+
+    .obox.UMOJA .orghead {
+        background-color: #01388E;
+        color: white;
+    }
+
+    .obox.Division .orghead {
+        background-color: #01388E;
+        color: white;
+    }
+
+    .obox.Region .orghead {
+        background-color: #01388E;
+        color: white;
+    }
+
+    .obox.Area .orghead {
+        background-color: #01388E;
+        color: white;
+    }
+
+    .obox.Branch .orghead {
+        background-color: #01388E;
+        color: white;
+    }
+
+    .obox .orgname {
+        background-color: #F9AA37;
+    }
+
+    .plusBtn {
+        position: absolute;
+        right: 3px;
+        top: 3px;
+        padding: 5px;
+        background: yellow;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        justify-content: center;
+        border: 1px solid;
+        align-items: center;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+        .plusBtn:hover {
+            background: orange;
+        }
+</style>
+
+<div class="card">
+    <div class="card-header" style="height:44px;">
+        <h5 style="font-size: 20px;color:black!important;">Dynamic Hierarchy</h5>
+    </div>
+    <div class="card-body" id="box" style="overflow: scroll">
+        <div id="orgDiv"></div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" style="color: darkslateblue;" id="exampleModalLabel">Branch: <span id="branchNameModal"></span></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="box1" style="overflow: scroll">
+                <div id="orgDiv1"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="exampleModal2" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" style="color: darkslateblue;" id="exampleModalLabel">Add Node <span id="branchNameModal"></span></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="box1" style="overflow: scroll">
+                <div class="form-group row">
+                    <div class="col-md-12">
+                        <input type="text" class="form-control" name="personname" id="personname" placeholder="Type Name Here" />
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-12">
+                        <input type="file" class="form-control" name="personImg" id="personImg" />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary btn-sm" onclick="AddAnotherPerson()">Add</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="CloseModal2()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+        let myArray = [{
+                        id: 1,
+                        imgUrl: 'https://randomuser.me/api/portraits/women/2.jpg',
+                        parentCode: 'sfds',
+                        parentId: 0,
+                        parentName: 'Demo',
+                        type: 'Node'
+                    }];
+        let clickedId = 0;
+        var selectedFile;
+        var ids = [1];
+
+        $(document).ready(function () {
+            var myDiv = $("#box");
+            var scrollto = myDiv.offset().left + ((myDiv.width() / 2) - 200);
+            myDiv.animate({ scrollLeft: scrollto });
+
+            var myDiv1 = $("#box1");
+            var scrollto1 = myDiv.offset().left + ((myDiv.width() / 2) - 200);
+            myDiv1.animate({ scrollLeft: scrollto });
+
+            //$('.google-visualization-orgchart-node-medium').on('click', function () {
+            //    console.log($(this).closest('.obox'))
+            //})
+
+
+
+
+
+            $('#personImg').change(function () {
+                selectedFile = $(this).prop('files')[0];
+
+                // Log the selected file details (for demonstration purposes)
+                console.log('Selected File:', selectedFile);
+
+                // You can use the selectedFile variable to perform further actions, such as uploading the file.
+            });
+
+
+        })
+
+        var branchId = 0;
+
+        function OpenOrgModal(Id, type) {
+            console.log(Id, type);
+            // if (type == 'Branch') {
+            //     branchId = Id;
+            //     google.setOnLoadCallback(drawEmpChartGroup);
+            //     $('#exampleModal').modal('show');
+            // }
+        }
+
+        google.load("visualization", "1", { packages: ["orgchart"] });
+        google.setOnLoadCallback(drawEmpChart);
+        // google.setOnLoadCallback(drawEmpChartGroup);
+
+        function drawEmpChart() {
+            $.ajax({
+                type: 'GET',
+                url: "/api/OrganogramApi",
+                success: function (data) {
+                    data = myArray;
+                    console.log(data);
+
+                    var chartData = new google.visualization.DataTable();
+
+                    chartData.addColumn('string', 'id');
+                    chartData.addColumn('string', 'parentName');
+                    chartData.addColumn('string', 'type');
+                    chartData.addColumn('string', 'parentCode');
+
+
+                    $.each(data, function (index, row) {
+                        console.log(row)
+                        var option = '';
+
+                        //var sum = 0;
+                        //$.each(row.children, function (i, item) {
+                        //    option += `<tr>
+                        //                        <td>${item.memberCount} =</td>
+                        //                        <td>${item.designation?.shortName}</td>
+                        //                    </tr>`
+                        //    sum += item.memberCount;
+                        //})
+                        //if (row.children.length > 0) {
+                        //    option += `<tr>
+                        //                    <td>Total = </td>
+                        //                    <td> ${sum}</td>
+                        //                </tr>`
+                        //}
+
+                        var Id = row.parentId.toString() == "0" ? '' : row.parentId.toString();
+                        //var url = 'Assets/man.jpg';
+                        //if (row.url != null && row.url != '') {
+                        //    url = row.url;
+                        //}
+
+                        chartData.addRows([[{
+                            v: row.id.toString(),
+                            //f: row.title + '<div><img height="50px" width="50px" src="/OrgImg/' + url + '" /></div><div><table class="table childTbl" style="">'+option+'</table></div>'
+                            // f: '<div class="obox ' + row.type + '" onclick="OpenOrgModal(' + row.Id + ', \'' + row.type + '\')"><div class="orghead"><span class="plusBtn">+</span>' + row.type + '</div><div class="orgheadImg"><img class="imgUrl" src="' + row.imgUrl + '"/></div><div class="orgname">' + row.parentName + '</div></div>'
+                            f: '<div class="obox ' + row.type + '" ><div class="orghead"><span class="plusBtn" onclick="AddAnother('+row.id+')">+</span>' + row.type + '</div><div class="orgheadImg"><img class="imgUrl" src="' + row.imgUrl + '"/></div><div class="orgname">' + row.parentName + '</div></div>'
+                        }, Id, row.parentName, row.parentCode]]);
+                        option = '';
+
+                    });
+
+
+                    var chart = new google.visualization.OrgChart($("#orgDiv")[0]);
+                    chart.draw(chartData, { allowHtml: true });
+
+                    google.visualization.events.addListener(chart, 'select', toggleDisplay);
+
+                    function toggleDisplay() {
+                        var selection = chart.getSelection();
+                        var row;
+                        if (selection.length == 0) {
+                            row = previous;
+                        }
+                        else {
+                            row = selection[0].row;
+                            previous = row;
+                        }
+                        var collapsed = chart.getCollapsedNodes();
+                        var collapse = (collapsed.indexOf(row) == -1);
+                        // chart.collapse(row, collapse);
+                        chart.setSelection([{ row: row, column: null }]);
+                    }
+                }
+            });
+
+
+        }
+
+
+        function AddAnother(id) {
+            clickedId = id;
+
+            $('#personname').val('');
+
+            $('#exampleModal2').modal('show');
+        }
+
+
+        function AddAnotherPerson(){
+            var personName = $('#personname').val();
+            var personImg = selectedFile;
+
+            console.log(personName, personImg, clickedId);
+
+            var maxId = Math.max(...ids);
+            var newId = maxId + 1;
+            ids.push(newId);
+
+
+            let newObj = {
+                id: newId,
+                imgUrl: 'https://randomuser.me/api/portraits/women/2.jpg',
+                parentCode: 'sfds',
+                parentId: clickedId,
+                parentName: personName,
+                type: 'Node'
+            };
+            myArray.push(newObj);
+
+            google.setOnLoadCallback(drawEmpChart);
+
+            console.log(myArray);
+        }
+
+
+        function CloseModal2(){
+            $('#exampleModal2').modal('hide');
+        }
+
+        function drawEmpChartGroup() {
+            $.ajax({
+                type: 'GET',
+                url: "/Home/OrganogramGroupApi",
+                data: { branchId: branchId },
+                success: function (data) {
+                    console.log(22);
+                    console.log(data);
+                    console.log(33);
+
+                    var chartData = new google.visualization.DataTable();
+
+                    chartData.addColumn('string', 'id');
+                    chartData.addColumn('string', 'parentName');
+                    chartData.addColumn('string', 'type');
+                    chartData.addColumn('string', 'parentCode');
+
+                    $('#branchNameModal').text(data[0]?.parentName);
+
+                    $.each(data, function (index, row) {
+                        console.log(row)
+                        var option = '';
+
+                        var Id = row.parentId.toString() == "0" ? '' : row.parentId.toString();
+
+
+                        chartData.addRows([[{
+                            v: row.id.toString(),
+                            f: '<div class="obox ' + row.type + '" onclick="OpenOrgModal(' + Id + ', \'' + row.type + '\')"><div class="orghead">' + row.type + '</div><div class="orgname">' + row.parentName + '</div></div>'
+                        }, Id, row.parentName, row.parentCode]]);
+                        option = '';
+
+                    });
+
+
+                    var chart = new google.visualization.OrgChart($("#orgDiv1")[0]);
+                    chart.draw(chartData, { allowHtml: true });
+
+                    google.visualization.events.addListener(chart, 'select', toggleDisplay);
+
+                    function toggleDisplay() {
+                        var selection = chart.getSelection();
+                        var row;
+                        if (selection.length == 0) {
+                            row = previous;
+                        }
+                        else {
+                            row = selection[0].row;
+                            previous = row;
+                        }
+                        var collapsed = chart.getCollapsedNodes();
+                        var collapse = (collapsed.indexOf(row) == -1);
+                        // chart.collapse(row, collapse);
+                        chart.setSelection([{ row: row, column: null }]);
+                    }
+                }
+            });
+
+            
+
+
+            function pushToMyArray(id, imgUrl, parentCode, parentId, parentName, type) {
+                let newObj = {
+                    id: id,
+                    imgUrl: imgUrl,
+                    parentCode: parentCode,
+                    parentId: parentId,
+                    parentName: parentName,
+                    type: type
+                };
+                myArray.push(newObj);
+
+                console.log(myArray);
+            }
+
+
+            function popFromMyArray(id) {
+                const index = myArray.findIndex(obj => obj.id === id);
+
+                if (index !== -1) {
+                    const poppedObj = myArray.splice(index, 1)[0];
+                    return poppedObj;
+                } else {
+                    return null;
+                }
+            }
+
+        }
+    </script>
+}
